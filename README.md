@@ -1,31 +1,23 @@
-# satellite
-    import "github.com/joshuaferrara/go-satellite"
+# 前言
+* Forked from [joshuaferrara/go-satellite](https://github.com/joshuaferrara/go-satellite)
+* 原仓库协议：[BSD 2-Clause License](https://github.com/joshuaferrara/go-satellite/blob/master/LICENSE)
+* 原 repo 的浮点数计算可能存在精度问题，所以新建一个用新的方式计算部分浮点数
+* 在原有基础上 可能做出部分修改，HamZone.cn 相关 TLE 计算会使用此仓库
+* 中文本土化
 
-## Intro
+# TLESatellite
+[![GoDoc](https://godoc.org/github.com/HamZone/TLESatellite?status.svg)](https://godoc.org/github.com/HamZone/TLESatellite)
 
-[![Build Status](https://travis-ci.org/joshuaferrara/go-satellite.svg?branch=master)](https://travis-ci.org/joshuaferrara/go-satellite) [![GoDoc](https://godoc.org/github.com/joshuaferrara/go-satellite?status.svg)](https://godoc.org/github.com/joshuaferrara/go-satellite)
+```go
+import "github.com/HamZone/TLESatellite"`
+```
 
-I decided to port the SGP4 library to GoLang as one of my first projects with the language. I've included a test suite to ensure accuracy.
+项目使用 SGP4 模型进行预测
 
-## Usage
+## 用法
 
 #### Constants
 
-```go
-const DEG2RAD float64 = math.Pi / 180.0
-```
-
-```go
-const RAD2DEG float64 = 180.0 / math.Pi
-```
-
-```go
-const TWOPI float64 = math.Pi * 2.0
-```
-
-```go
-const XPDOTP float64 = 1440.0 / (2.0 * math.Pi)
-```
 
 #### func  ECIToLLA
 
