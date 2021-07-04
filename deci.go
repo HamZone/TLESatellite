@@ -29,6 +29,21 @@ func DecimalSub2(d1, d2 float64) float64 {
 	return res
 }
 
+//DecimalSub3 d1 - d2 - d3
+func DecimalSub3(d1, d2, d3 float64) float64 {
+	res, _ := decimal.NewFromFloat(d1).Sub(decimal.NewFromFloat(d2)).Sub(decimal.NewFromFloat(d3)).
+		Float64()
+	return res
+}
+
+//DecimalSub4 d1 - d2 - d3 - d4
+func DecimalSub4(d1, d2, d3, d4 float64) float64 {
+	res, _ := decimal.NewFromFloat(d1).Sub(decimal.NewFromFloat(d2)).
+		Sub(decimal.NewFromFloat(d3)).Sub(decimal.NewFromFloat(d4)).
+		Float64()
+	return res
+}
+
 //DecimalDiv2 d1 / d2
 func DecimalDiv2(d1, d2 float64) float64 {
 	res, _ := decimal.NewFromFloat(d1).Div(decimal.NewFromFloat(d2)).Float64()

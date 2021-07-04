@@ -4,7 +4,8 @@ import (
 	"math"
 )
 
-// this procedure initializes variables for sgp4.
+//sgp4init 初始化 sgp4 变量
+//this procedure initializes variables for sgp4.
 func sgp4init(opsmode *string, epoch float64, satrec *Satellite) (position, velocity Vector3) {
 	var cc1sq, cc2, cc3, coef, coef1, cosio4, eeta, etasq, perige, pinvsq, psisq, qzms24, sfour, temp, temp1, temp2, temp3, temp4, tsi, xhdot1 float64
 
@@ -19,10 +20,10 @@ func sgp4init(opsmode *string, epoch float64, satrec *Satellite) (position, velo
 	j4 := satrec.whichconst.j4
 	j3oj2 := satrec.whichconst.j3oj2
 
-	ss := 78.0/radiusearthkm + 1.0
+	ss := DecimalAdd2(DecimalDiv2(78.0, radiusearthkm), 1.0)
 	qzms2ttemp := (120.0 - 78.0) / radiusearthkm
-	qzms2t := qzms2ttemp * qzms2ttemp * qzms2ttemp * qzms2ttemp
-	x2o3 := 2.0 / 3.0
+	qzms2t := DecimalMul4(qzms2ttemp, qzms2ttemp, qzms2ttemp, qzms2ttemp)
+	x2o3 := DecimalDiv2(2.0, 3.0)
 
 	satrec.init = "y"
 	satrec.t = 0.0
@@ -244,17 +245,17 @@ func sgp4init(opsmode *string, epoch float64, satrec *Satellite) (position, velo
 	return
 }
 
-// this procedure initializes the spg4 propagator. all the initialization is consolidated here instead of having multiple loops inside other routines.
+//initl 合并初始化 spg4
+//this procedure initializes the spg4 propagator. all the initialization is consolidated here instead of having multiple loops inside other routines.
 func initl(satn int64, grav GravConst, ecco, epoch, inclo, noIn float64, methodIn, opsmode string) (ainv, no, ao, con41, con42, cosio, cosio2, eccsq, omeosq, posq, rp, rteosq, sinio, gsto float64) {
 	var ak, d1, adel, po float64
 
-	x2o3 := 2.0 / 3.0
-
-	eccsq = ecco * ecco
+	x2o3 := DecimalDiv2(2.0, 3.0)
+	eccsq = DecimalMul2(ecco, ecco)
 	omeosq = 1.0 - eccsq
 	rteosq = math.Sqrt(omeosq)
 	cosio = math.Cos(inclo)
-	cosio2 = cosio * cosio
+	cosio2 = DecimalMul2(cosio, cosio)
 
 	ak = math.Pow(grav.xke/noIn, x2o3)
 	d1 = 0.75 * grav.j2 * (3.0*cosio2 - 1.0) / (rteosq * omeosq)
@@ -267,7 +268,7 @@ func initl(satn int64, grav GravConst, ecco, epoch, inclo, noIn float64, methodI
 	sinio = math.Sin(inclo)
 	po = ao * omeosq
 	con42 = 1.0 - 5.0*cosio2
-	con41 = -con42 - cosio2 - cosio2
+	con41 = DecimalSub3(-con42, cosio2, cosio2)
 	ainv = 1.0 / ao
 	posq = po * po
 	rp = ao * (1.0 - ecco)
@@ -295,7 +296,7 @@ func initl(satn int64, grav GravConst, ecco, epoch, inclo, noIn float64, methodI
 // Calculates position and velocity vectors for given time
 func Propagate(sat Satellite, year int, month int, day, hours, minutes, seconds int) (position, velocity Vector3) {
 	j := JDay(year, month, day, hours, minutes, seconds)
-	m := (j - sat.jdsatepoch) * 1440
+	m := DecimalMul2(DecimalSub2(j, sat.jdsatepoch), 1440)
 	return sgp4(&sat, m)
 }
 
@@ -307,42 +308,41 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 
 	mrt = 0.0
 	temp4 := 1.5e-12
-	x2o3 := 2.0 / 3.0
+	x2o3 := DecimalDiv2(2.0, 3.0)
 
 	radiusearthkm := satrec.whichconst.radiusearthkm
 	xke := satrec.whichconst.xke
 	j2 := satrec.whichconst.j2
 	j3oj2 := satrec.whichconst.j3oj2
-
-	vkmpersec := radiusearthkm * xke / 60.0
+	vkmpersec := DecimalDiv2(DecimalMul2(radiusearthkm, xke), 60.0)
 
 	satrec.t = tsince
 	satrec.Error = 0
 	// TODO: satrec.Error_message    = nil
 
-	xmdf = satrec.mo + satrec.mdot*satrec.t
-	var argpdf = satrec.argpo + satrec.argpdot*satrec.t
-	nodedf = satrec.nodeo + satrec.nodedot*satrec.t
+	xmdf = DecimalAdd2(satrec.mo, DecimalMul2(satrec.mdot, satrec.t))
+	var argpdf = DecimalAdd2(satrec.argpo, DecimalMul2(satrec.argpdot, satrec.t))
+	nodedf = DecimalAdd2(satrec.nodeo, DecimalMul2(satrec.nodedot, satrec.t))
 	argpm = argpdf
 	mm = xmdf
-	t2 = satrec.t * satrec.t
-	nodem = nodedf + satrec.nodecf*t2
-	tempa = 1.0 - satrec.cc1*satrec.t
-	tempe = satrec.bstar * satrec.cc4 * satrec.t
-	templ = satrec.t2cof * t2
+	t2 = DecimalMul2(satrec.t, satrec.t)
+	nodem = DecimalAdd2(nodedf, DecimalMul2(satrec.nodecf, t2))
+	tempa = DecimalSub2(1.0, DecimalMul2(satrec.cc1, satrec.t))
+	tempe = DecimalMul3(satrec.bstar, satrec.cc4, satrec.t)
+	templ = DecimalMul2(satrec.t2cof, t2)
 
 	if satrec.isimp != 1 {
-		delomg = satrec.omgcof * satrec.t
-		delmtemp := 1.0 + satrec.eta*math.Cos(xmdf)
-		delm = satrec.xmcof * (delmtemp*delmtemp*delmtemp - satrec.delmo)
-		temp = delomg + delm
-		mm = xmdf + temp
-		argpm = argpdf - temp
-		t3 = t2 * satrec.t
-		t4 = t3 * satrec.t
-		tempa = tempa - satrec.d2*t2 - satrec.d3*t3 - satrec.d4*t4
-		tempe = tempe + satrec.bstar*satrec.cc5*(math.Sin(mm)-satrec.sinmao)
-		templ = templ + satrec.t3cof*t3 + t4*(satrec.t4cof+satrec.t*satrec.t5cof)
+		delomg = DecimalMul2(satrec.omgcof, satrec.t)
+		delmtemp := DecimalAdd2(1.0, DecimalMul2(satrec.eta, math.Cos(xmdf)))
+		delm = DecimalMul2(satrec.xmcof, DecimalSub2(DecimalMul3(delmtemp, delmtemp, delmtemp), satrec.delmo))
+		temp = DecimalAdd2(delomg, delm)
+		mm = DecimalAdd2(xmdf, temp)
+		argpm = DecimalSub2(argpdf, temp)
+		t3 = DecimalMul2(t2, satrec.t)
+		t4 = DecimalMul2(t3, satrec.t)
+		tempa = DecimalSub4(tempa, DecimalMul2(satrec.d2, t2), DecimalMul2(satrec.d3, t3), DecimalMul2(satrec.d4, t4))
+		tempe = DecimalAdd2(tempe, DecimalMul3(satrec.bstar, satrec.cc5, (DecimalSub2(math.Sin(mm), satrec.sinmao))))
+		templ = DecimalAdd3(templ, DecimalMul2(satrec.t3cof, t3), DecimalMul2(t4, (DecimalAdd2(satrec.t4cof, DecimalMul2(satrec.t, satrec.t5cof)))))
 	}
 
 	nm = satrec.no
@@ -367,9 +367,9 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 		satrec.ErrorStr = ("Mean motion is less than zero")
 	}
 
-	am = math.Pow((xke/nm), x2o3) * tempa * tempa
-	nm = xke / math.Pow(am, 1.5)
-	em = em - tempe
+	am = DecimalMul3(math.Pow((DecimalDiv2(xke, nm)), x2o3), tempa, tempa)
+	nm = DecimalDiv2(xke, math.Pow(am, 1.5))
+	em = DecimalSub2(em, tempe)
 
 	if em >= 1.0 || em < -0.001 {
 		satrec.Error = 1
@@ -379,15 +379,16 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 	if em < 1.0e-6 {
 		em = 1.0e-6
 	}
-	mm = mm + satrec.no*templ
-	xlm = mm + argpm + nodem
-	emsq = em * em
-	temp = 1.0 - emsq
+
+	mm = DecimalAdd2(mm, DecimalMul2(satrec.no, templ))
+	xlm = DecimalAdd3(mm, argpm, nodem)
+	emsq = DecimalMul2(em, em)
+	temp = DecimalSub2(1.0, emsq) //目前看起来的用途是 防止emsq未使用报错
 
 	nodem = math.Mod(nodem, TWOPI)
 	argpm = math.Mod(argpm, TWOPI)
 	xlm = math.Mod(xlm, TWOPI)
-	mm = math.Mod((xlm - argpm - nodem), TWOPI)
+	mm = math.Mod((DecimalSub3(xlm, argpm, nodem)), TWOPI)
 
 	sinim = math.Sin(inclm)
 	cosim = math.Cos(inclm)
@@ -401,6 +402,7 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 	cosip = cosim
 
 	if satrec.method == "d" {
+		//todo dpper里还有一堆需要转换的 -_-
 		dpperResults := dpper(satrec, satrec.inclo, "n", ep, xincp, nodep, argpp, mp, satrec.operationmode)
 
 		ep = dpperResults.ep
@@ -411,8 +413,8 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 
 		if xincp < 0.0 {
 			xincp = -xincp
-			nodep = nodep + math.Pi
-			argpp = argpp - math.Pi
+			nodep = DecimalAdd2(nodep, math.Pi)
+			argpp = DecimalSub2(argpp, math.Pi)
 		}
 
 		if ep < 0.0 || ep > 1.0 {
@@ -458,9 +460,9 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 		ktr = ktr + 1
 	}
 
-	ecose = axnl*coseo1 + aynl*sineo1
-	esine = axnl*sineo1 - aynl*coseo1
-	el2 = axnl*axnl + aynl*aynl
+	ecose = DecimalAdd2(DecimalMul2(axnl, coseo1), DecimalMul2(aynl, sineo1))
+	esine = DecimalAdd2(DecimalMul2(axnl, sineo1), DecimalMul2(aynl, coseo1))
+	el2 = DecimalAdd2(DecimalMul2(axnl, axnl), DecimalMul2(aynl, aynl))
 	pl = am * (1.0 - el2)
 
 	if pl < 0.0 {
@@ -501,24 +503,25 @@ func sgp4(satrec *Satellite, tsince float64) (position, velocity Vector3) {
 		cnod = math.Cos(xnode)
 		sini = math.Sin(xinc)
 		cosi = math.Cos(xinc)
-		xmx = -snod * cosi
-		xmy = cnod * cosi
+
+		xmx = DecimalMul2(-snod, cosi)
+		xmy = DecimalMul2(cnod, cosi)
 		ux = xmx*sinsu + cnod*cossu
 		uy = xmy*sinsu + snod*cossu
 		uz = sini * sinsu
 		vx = xmx*cossu - cnod*sinsu
 		vy = xmy*cossu - snod*sinsu
-		vz = sini * cossu
+		vz = DecimalMul2(sini, cossu)
 
-		_mr := mrt * radiusearthkm
+		_mr := DecimalMul2(mrt, radiusearthkm)
 
-		position.X = _mr * ux
-		position.Y = _mr * uy
-		position.Z = _mr * uz
+		position.X = DecimalMul2(_mr, ux)
+		position.Y = DecimalMul2(_mr, uy)
+		position.Z = DecimalMul2(_mr, uz)
 
-		velocity.X = (mvt*ux + rvdot*vx) * vkmpersec
-		velocity.Y = (mvt*uy + rvdot*vy) * vkmpersec
-		velocity.Z = (mvt*uz + rvdot*vz) * vkmpersec
+		velocity.X = (DecimalAdd2(DecimalMul2(mvt, ux), DecimalMul2(rvdot, vx))) * vkmpersec
+		velocity.Y = (DecimalAdd2(DecimalMul2(mvt, uy), DecimalMul2(rvdot, vy))) * vkmpersec
+		velocity.Z = (DecimalAdd2(DecimalMul2(mvt, uz), DecimalMul2(rvdot, vz))) * vkmpersec
 	}
 
 	if mrt < 1.0 {
