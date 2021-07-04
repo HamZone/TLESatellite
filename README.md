@@ -2,8 +2,9 @@
 * Forked from [joshuaferrara/go-satellite](https://github.com/joshuaferrara/go-satellite)
 * 原仓库协议：[BSD 2-Clause License](https://github.com/joshuaferrara/go-satellite/blob/master/LICENSE)
 * 原 repo 的浮点数计算可能存在精度问题，所以新建一个用新的方式计算部分浮点数
-* 在原有基础上 可能做出部分修改，HamZone.cn 相关 TLE 计算会使用此仓库
-* 中文本土化
+* 在原有基础上 可能做出部分修改，HamZone.cn 相关 TLE 计算会使用此仓库，方便自主调整
+* 仓库内容中文本土化
+* `master` 分支保持和原仓库一致，`emin` 为默认分支
 
 # TLESatellite
 [![GoDoc](https://godoc.org/github.com/HamZone/TLESatellite?status.svg)](https://godoc.org/github.com/HamZone/TLESatellite)

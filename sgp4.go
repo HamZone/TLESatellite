@@ -291,6 +291,7 @@ func initl(satn int64, grav GravConst, ecco, epoch, inclo, noIn float64, methodI
 	return
 }
 
+//Propagate 计算给定时间的位置和速度矢量 sgp4 模型
 // Calculates position and velocity vectors for given time
 func Propagate(sat Satellite, year int, month int, day, hours, minutes, seconds int) (position, velocity Vector3) {
 	j := JDay(year, month, day, hours, minutes, seconds)

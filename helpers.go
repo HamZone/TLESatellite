@@ -28,6 +28,7 @@ type LookAngles struct {
 	Az, El, Rg float64
 }
 
+//ParseTLE TLE两行数据转为结构体
 // Parses a two line element dataset into a Satellite struct
 func ParseTLE(line1, line2, gravconst string) (sat Satellite) {
 	sat.Line1 = line1
@@ -58,6 +59,7 @@ func ParseTLE(line1, line2, gravconst string) (sat Satellite) {
 	return
 }
 
+//TLEToSat TLE两行数据转为结构体 并运行sgp4init
 // Converts a two line element data set into a Satellite struct and runs sgp4init
 func TLEToSat(line1, line2 string, gravconst string) Satellite {
 	//sat := Satellite{Line1: line1, Line2: line2}

@@ -37,67 +37,63 @@ func days2mdhms(year int64, epochDays float64) (mon, day, hr, min, sec float64) 
 	return
 }
 
-// Calc julian date given year, month, day, hour, minute and second
-// the julian date is defined by each elapsed day since noon, jan 1, 4713 bc.
+//JDay 计算儒略日
+//Calc julian date given year, month, day, hour, minute and second
+//the julian date is defined by each elapsed day since noon, jan 1, 4713 bc.
 func JDay(year, mon, day, hr, min, sec int) float64 {
 	return (367.0*float64(year) - math.Floor((7*(float64(year)+math.Floor((float64(mon)+9)/12.0)))*0.25) + math.Floor(275*float64(mon)/9.0) + float64(day) + 1721013.5 + ((float64(sec)/60.0+float64(min))/60.0+float64(hr))/24.0)
 }
 
-// this function finds the greenwich sidereal time (iau-82)
+//gstime 格林威治恒星时间（iau-82）
+//this function finds the greenwich sidereal time (iau-82)
 func gstime(jdut1 float64) (temp float64) {
-	tut1 := (jdut1 - 2451545.0) / 36525.0
-	temp = -6.2e-6*tut1*tut1*tut1 + 0.093104*tut1*tut1 + (876600.0*3600+8640184.812866)*tut1 + 67310.54841
-	temp = math.Mod((temp * DEG2RAD / 240.0), TWOPI)
-
+	tut1 := DecimalDiv2(DecimalSub2(jdut1, 2451545.0), 36525.0)
+	temp = DecimalAdd3(DecimalMul4(-6.2e-6, tut1, tut1, tut1), DecimalMul3(0.093104, tut1, tut1)+DecimalMul2(DecimalAdd2(DecimalMul2(876600.0, 3600), 8640184.812866), tut1), 67310.54841)
+	temp = math.Mod((DecimalDiv2(DecimalMul2(temp, DEG2RAD), 240.0)), TWOPI)
 	if temp < 0.0 {
-		temp += TWOPI
+		temp = DecimalAdd2(temp, TWOPI)
 	}
-
 	return
 }
 
-// Calc GST given year, month, day, hour, minute and second
+//GSTimeFromDate 计算Greenwich Mean Sidereal Time 格林威治平均恒星时
+//Calc GST given year, month, day, hour, minute and second
 func GSTimeFromDate(year, mon, day, hr, min, sec int) float64 {
 	jDay := JDay(year, mon, day, hr, min, sec)
 	return gstime(jDay)
 }
 
+//ECIToLLA 将地心惯性坐标转换为等效的纬度(latitude)、经度(longitude)、高度(altitude)和速度(velocity)
 // Convert Earth Centered Inertial coordinated into equivalent latitude, longitude, altitude and velocity.
 // Reference: http://celestrak.com/columns/v02n03/
 func ECIToLLA(eciCoords Vector3, gmst float64) (altitude, velocity float64, ret LatLong) {
-	a := 6378.137     // Semi-major Axis
-	b := 6356.7523142 // Semi-minor Axis
-	f := (a - b) / a  // Flattening
-	e2 := ((2 * f) - math.Pow(f, 2))
-
-	sqx2y2 := math.Sqrt(math.Pow(eciCoords.X, 2) + math.Pow(eciCoords.Y, 2))
-
+	a := 6378.137                          // Semi-major Axis
+	b := 6356.7523142                      // Semi-minor Axis
+	f := DecimalDiv2(DecimalSub2(a, b), a) // Flattening
+	e2 := DecimalSub2(DecimalMul2(2, f), math.Pow(f, 2))
+	sqx2y2 := math.Sqrt(DecimalAdd2(math.Pow(eciCoords.X, 2), math.Pow(eciCoords.Y, 2)))
 	// Spherical Earth Calculations
-	longitude := math.Atan2(eciCoords.Y, eciCoords.X) - gmst
+	longitude := DecimalSub2(math.Atan2(eciCoords.Y, eciCoords.X), gmst)
 	latitude := math.Atan2(eciCoords.Z, sqx2y2)
-
 	// Oblate Earth Fix
 	C := 0.0
 	for i := 0; i < 20; i++ {
-		C = 1 / math.Sqrt(1-e2*(math.Sin(latitude)*math.Sin(latitude)))
-		latitude = math.Atan2(eciCoords.Z+(a*C*e2*math.Sin(latitude)), sqx2y2)
+		C = DecimalDiv2(1, math.Sqrt(1-e2*(DecimalMul2(math.Sin(latitude), math.Sin(latitude)))))
+		latitude = math.Atan2(eciCoords.Z+(DecimalMul4(a, C, e2, math.Sin(latitude))), sqx2y2)
 	}
-
 	// Calc Alt
-	altitude = (sqx2y2 / math.Cos(latitude)) - (a * C)
-
+	altitude = DecimalSub2(DecimalDiv2(sqx2y2, math.Cos(latitude)), DecimalMul2(a, C))
 	// Orbital Speed ≈ sqrt(μ / r) where μ = std. gravitaional parameter
-	velocity = math.Sqrt(398600.4418 / (altitude + 6378.137))
-
+	velocity = math.Sqrt(DecimalDiv2(398600.4418, DecimalAdd2(altitude, 6378.137)))
 	ret.Latitude = latitude
 	ret.Longitude = longitude
-
 	return
 }
 
+//LatLongDeg 将以弧度表示的LatLong转换为以度表示的LatLong
 // Convert LatLong in radians to LatLong in degrees
 func LatLongDeg(rad LatLong) (deg LatLong) {
-	deg.Longitude = math.Mod(rad.Longitude/math.Pi*180, 360)
+	deg.Longitude = math.Mod(DecimalMul2(DecimalDiv2(rad.Longitude, math.Pi), 180), 360)
 	if deg.Longitude > 180 {
 		deg.Longitude = 360 - deg.Longitude
 	} else if deg.Longitude < -180 {
@@ -135,15 +131,17 @@ func LLAToECI(obsCoords LatLong, alt, jday float64) (eciObs Vector3) {
 	return
 }
 
-// Convert Earth Centered Intertial coordinates into Earth Cenetered Earth Final coordinates
-// Reference: http://ccar.colorado.edu/ASEN5070/handouts/coordsys.doc
+//ECIToECEF 将地心间坐标转换为地心最终坐标 Earth Centered Intertial
+//Convert Earth Centered Intertial coordinates into Earth Cenetered Earth Final coordinates
+//Reference: http://ccar.colorado.edu/ASEN5070/handouts/coordsys.doc
 func ECIToECEF(eciCoords Vector3, gmst float64) (ecfCoords Vector3) {
-	ecfCoords.X = eciCoords.X*math.Cos(gmst) + eciCoords.Y*math.Sin(gmst)
-	ecfCoords.Y = eciCoords.X*-math.Sin(gmst) + eciCoords.Y*math.Cos(gmst)
+	ecfCoords.X = DecimalAdd2(DecimalMul2(eciCoords.X, math.Cos(gmst)), DecimalMul2(eciCoords.Y, math.Sin(gmst)))
+	ecfCoords.Y = DecimalAdd2(DecimalMul2(eciCoords.X, (-math.Sin(gmst))), DecimalMul2(eciCoords.Y, math.Cos(gmst)))
 	ecfCoords.Z = eciCoords.Z
 	return
 }
 
+//ECIToLookAngles 计算给定卫星位置和观察者位置的视角
 // Calculate look angles for given satellite position and observer position
 // obsAlt in km
 // Reference: http://celestrak.com/columns/v02n02/
